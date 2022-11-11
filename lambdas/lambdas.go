@@ -14,160 +14,14 @@ import (
 )
 
 type Request struct {
-	CommsID  int `json:"commsId"`
-	UserData struct {
-		ObjectID           string    `json:"objectId"`
-		FirstName          string    `json:"firstName"`
-		LastName           string    `json:"lastName"`
-		Username           string    `json:"username"`
-		MobileNumber       string    `json:"mobileNumber"`
-		CountryCode        string    `json:"countryCode"`
-		MembershipID       []string  `json:"membershipId"`
-		IsEmailVerified    string    `json:"isEmailVerified"`
-		IsMobileVerfied    string    `json:"isMobileVerfied"`
-		TermsAndCondition1 bool      `json:"termsAndCondition1"`
-		TermsAndCondition2 bool      `json:"termsAndCondition2"`
-		Handicap           int       `json:"handicap"`
-		CreatedAt          time.Time `json:"createdAt"`
-		UpdatedAt          time.Time `json:"updatedAt"`
-		Addresses          []struct {
-			NickName string `json:"nickName"`
-			Address  string `json:"address"`
-			Emirates string `json:"emirates"`
-			Region   string `json:"region"`
-			ZipCode  string `json:"zipCode"`
-		} `json:"addresses"`
-		EmailAlerts  bool `json:"emailAlerts"`
-		MobileAlerts bool `json:"mobileAlerts"`
-		UserSavings  []struct {
-			MembershipID      string `json:"membershipId"`
-			BenefitGroupWorth int    `json:"benefitGroupWorth"`
-			Amount            int    `json:"amount"`
-		} `json:"userSavings"`
-		DataID            string `json:"dataId"`
-		FromWhere         int    `json:"fromWhere"`
-		Otp               string `json:"otp"`
-		Recipient         string `json:"recipient"`
-		Type              int    `json:"type"`
-		WalkthroughStatus bool   `json:"walkthroughStatus"`
-		FavouriteConfigs  []struct {
-			MembershipID string   `json:"membershipId"`
-			Configs      []string `json:"configs"`
-		} `json:"favouriteConfigs"`
-	} `json:"userData"`
-	ProjectCode  string `json:"projectCode"`
-	TemplateCode string `json:"templateCode"`
-	RequestID    string `json:"requestId"`
-	BookingData  struct {
-		ObjectID             string `json:"objectId"`
-		CourierPickupAddress struct {
-			FullAddress struct {
-				NickName string `json:"nickName"`
-				Address  string `json:"address"`
-				Emirates string `json:"emirates"`
-				Region   string `json:"region"`
-				ZipCode  string `json:"zipCode"`
-			} `json:"fullAddress"`
-			Emirates struct {
-				Location string `json:"location"`
-			} `json:"emirates"`
-			Region struct {
-				Location string `json:"location"`
-			} `json:"region"`
-			FullName string `json:"fullName"`
-			Mobile   string `json:"mobile"`
-			Landmark string `json:"landmark"`
-			Landline string `json:"landline"`
-		} `json:"courierPickupAddress"`
-		CourierDropAddress struct {
-			FullAddress struct {
-				NickName string `json:"nickName"`
-				Address  string `json:"address"`
-				Emirates string `json:"emirates"`
-				Region   string `json:"region"`
-				ZipCode  string `json:"zipCode"`
-			} `json:"fullAddress"`
-			Emirates struct {
-				Location string `json:"location"`
-			} `json:"emirates"`
-			Region struct {
-				Location string `json:"location"`
-			} `json:"region"`
-			FullName string `json:"fullName"`
-			Mobile   string `json:"mobile"`
-			Landmark string `json:"landmark"`
-			Landline string `json:"landline"`
-		} `json:"courierDropAddress"`
-		Date                     string `json:"date"`
-		Time                     string `json:"time"`
-		BenefitGroupItemObjectID string `json:"benefitGroupItemObjectId"`
-		BookingStatus            string `json:"bookingStatus"`
-		Service                  struct {
-			Name        string `json:"name"`
-			DisplayName string `json:"displayName"`
-			Category    struct {
-				ID   string `json:"id"`
-				Name string `json:"name"`
-				Logo string `json:"logo"`
-			} `json:"category"`
-			Partner struct {
-				ID   string `json:"id"`
-				Name string `json:"name"`
-				Logo string `json:"logo"`
-			} `json:"partner"`
-			Facility struct {
-				ID   string `json:"id"`
-				Name string `json:"name"`
-				Logo string `json:"logo"`
-			} `json:"facility"`
-			CostPrice        string `json:"costPrice"`
-			SellingPrice     string `json:"sellingPrice"`
-			TaxType          string `json:"taxType"`
-			TaxPercentage    string `json:"taxPercentage"`
-			Currency         string `json:"currency"`
-			LongDescription  string `json:"longDescription"`
-			ShortDescription string `json:"shortDescription"`
-			Images           struct {
-				CoverImageMobile   string `json:"coverImageMobile"`
-				CoverImageWeb      string `json:"coverImageWeb"`
-				DisplayImageMobile string `json:"displayImageMobile"`
-				DisplayImageWeb    string `json:"displayImageWeb"`
-			} `json:"images"`
-			ThirdPartyWebsite        string `json:"thirdPartyWebsite"`
-			Faq                      string `json:"faq"`
-			DefaultRedemptionType    int    `json:"defaultRedemptionType"`
-			DefaultRedemptionProcess string `json:"defaultRedemptionProcess"`
-			DefaultBenefitOffered    string `json:"defaultBenefitOffered"`
-			DefaultTermsAndCondition string `json:"defaultTermsAndCondition"`
-			Tat                      struct {
-				Minimum struct {
-					Value int `json:"value"`
-					Unit  int `json:"unit"`
-				} `json:"minimum"`
-				Maximum struct {
-					Value int `json:"value"`
-					Unit  int `json:"unit"`
-				} `json:"maximum"`
-				Cancel struct {
-					Value int `json:"value"`
-					Unit  int `json:"unit"`
-				} `json:"cancel"`
-			} `json:"tat"`
-			Mql struct {
-				IsActive            bool `json:"isActive"`
-				MqlAlertLevelFirst  int  `json:"mqlAlertLevelFirst"`
-				MqlAlertLevelSecond int  `json:"mqlAlertLevelSecond"`
-				MqlAlertLevelThird  int  `json:"mqlAlertLevelThird"`
-			} `json:"mql"`
-			DurationUnit  int `json:"durationUnit"`
-			DurationValue int `json:"durationValue"`
-			IsActive      int `json:"isActive"`
-		} `json:"service"`
-		Status    int       `json:"status"`
-		CreatedAt time.Time `json:"createdAt"`
-		UpdatedAt time.Time `json:"updatedAt"`
-	} `json:"bookingData"`
-	BookingTypeID int `json:"bookingTypeId"`
+	CommsID         string    `json:"commsId"`
+	ProjectCode     string `json:"projectCode"`
+	RequestID       string `json:"requestId"`
+	Recipient       string `json:"recipient"`
+	CountryCode     string `json:"countryCode"`
+	MobileNumber    string `json:"mobileNumber"`
+	MessageBody     string `json:"messageBody"`
+	TrackerObjectId string `json:"trackerObjectId"`
 }
 type Response struct {
 	Code   string `json:"code"`
@@ -177,51 +31,30 @@ type Response struct {
 
 func Handler(ctx context.Context, sqsEvent events.SQSEvent) error {
 	var request Request
-	
+
 	for _, message := range sqsEvent.Records {
-		// fmt.Printf("Message Body queue: %s", message.Body)
-		json.Unmarshal([]byte(message.Body), &request)
+		fmt.Printf("Message Body queue: %s", message.Body)
+		err := json.Unmarshal([]byte(message.Body), &request)
+		if err != nil {
+			log.Fatalln(err)
+		} 
 	}
-	log.Println(request.RequestID,"start")
+	log.Println(request.RequestID, "start")
 	fmt.Println(request, "request")
 	// log.Println(ctx, "context")
-	//log.Fatalln("exitting")
+	//log.Fatalln("exiting")
 	var response Response
 	body := strings.NewReader(`{
-		"status":"progessing"
+		"status":"PROCESSING"
 	}`)
-	resp, err := httpClient.ParseClient("PUT", "https://dev-fab-api-gateway.thriwe.com/parse/classes/tracker/"+request.RequestID, body, &response)
+	resp, err := httpClient.ParseClient("PUT", "https://dev-fab-api-gateway.thriwe.com/parse/classes/tracker/"+request.TrackerObjectId, body, &response)
 	if err != nil {
 		return err
 	}
 	log.Println(request.RequestID, resp)
 
-	if request.CommsID == 1 {
-		if request.BookingTypeID == 1 && request.TemplateCode == "" {
-
-		} else if request.BookingTypeID == 2 && request.TemplateCode == "" {
-			log.Println(request.RequestID, request.BookingTypeID)
-
-		} else if request.BookingTypeID == 3 && request.TemplateCode == "" {
-			log.Println(request.RequestID, request.BookingTypeID)
-
-		} else if request.BookingTypeID == 4 && request.TemplateCode == "" {
-			log.Println(request.RequestID, request.BookingTypeID)
-
-		} else if request.BookingTypeID == 5 && request.TemplateCode == "" {
-
-			log.Println(request.RequestID, request.BookingTypeID)
-		} else if request.BookingTypeID == 6 && request.TemplateCode == "" {
-			log.Println(request.RequestID, request.BookingTypeID)
-
-		} else if request.BookingTypeID == 7 && request.TemplateCode == "" {
-			log.Println(request.RequestID, request.BookingTypeID)
-
-		} else if request.BookingTypeID == 8 && request.TemplateCode == "" {
-			log.Println(request.RequestID, request.BookingTypeID)
-
-		} else {
-			body := strings.NewReader(`{
+	if request.CommsID == "1" {
+		body := strings.NewReader(`{
 		"applicationArea": {
 			"correlationId": "FT87745646i465",
 			"interfaceID": "ESB",
@@ -237,10 +70,10 @@ func Handler(ctx context.Context, sqsEvent events.SQSEvent) error {
 			"creationDateTime":"` + fmt.Sprint(time.Now()) + `"
 		},
 		"dataArea": {
-			"toAddress": "` + request.UserData.Username + `",
+			"toAddress": "` + request.Recipient + `",
 			"fromAddress": "FAB <donotreply@bankfab.com>",
 			"emailSubject": "FAB OTP",
-			"emailBodyContent": "` + request.TemplateCode + `",
+			"emailBodyContent": "` + request.MessageBody + `",
 			"emailBodyContentType": "text/html"
 		}
 	}`)
@@ -249,28 +82,26 @@ func Handler(ctx context.Context, sqsEvent events.SQSEvent) error {
 				return err
 			}
 			log.Println(request.RequestID, resp)
-			if resp.StatusCode != 200 && resp.StatusCode != 201 {
+			if resp.StatusCode != 200 {
 				body := strings.NewReader(`{
-					"status":"failure"
+					"status":"FAILED"
 				}`)
-				resp, err := httpClient.ParseClient("PUT", "https://dev-fab-api-gateway.thriwe.com/parse/classes/tracking", body, &response)
+				resp, err := httpClient.ParseClient("PUT", "https://dev-fab-api-gateway.thriwe.com/parse/classes/tracker/"+request.TrackerObjectId, body, &response)
 				if err != nil {
 					return err
 				}
 				log.Println(request.RequestID, resp)
 			} else {
 				body := strings.NewReader(`{
-					"status":"success"
+					"status":"SUCCESS"
 				}`)
-				resp, err := httpClient.ParseClient("PUT", "https://dev-fab-api-gateway.thriwe.com/parse/classes/tracking", body, &response)
+				resp, err := httpClient.ParseClient("PUT", "https://dev-fab-api-gateway.thriwe.com/parse/classes/tracker/"+request.TrackerObjectId, body, &response)
 				if err != nil {
 					return err
 				}
 				log.Println(request.RequestID, resp)
 			}
-		}
-	}
-	if request.CommsID == 2 && request.TemplateCode == "sms" {
+	}else if request.CommsID == "2" {
 		body := strings.NewReader(`{
 			"applicationArea": {
 				"correlationId": "FT87745646i465",
@@ -287,8 +118,8 @@ func Handler(ctx context.Context, sqsEvent events.SQSEvent) error {
 				"creationDateTime": "2020-06-20T09:12:28Z"
 			},
 			"dataArea": {
-				"mobileNumber": "` + request.UserData.MobileNumber + `",
-				"messageText": "` + request.TemplateCode + `",
+				"mobileNumber": "` + request.MobileNumber + `",
+				"messageText": "` + request.MessageBody + `",
 				"messageType": "OTP_EVENT",
 				"originatorName": "FAB"
 			}
@@ -298,20 +129,20 @@ func Handler(ctx context.Context, sqsEvent events.SQSEvent) error {
 			return err
 		}
 		log.Println(request.RequestID, resp)
-		if resp.StatusCode != 200 && resp.StatusCode != 201 {
+		if resp.StatusCode != 200 {
 			body := strings.NewReader(`{
-				"status":"failure"
+				"status":"FAILED"
 			}`)
-			resp, err := httpClient.ParseClient("PUT", "https://dev-fab-api-gateway.thriwe.com/parse/classes/tracking", body, &response)
+			resp, err := httpClient.ParseClient("PUT", "https://dev-fab-api-gateway.thriwe.com/parse/classes/tracker/"+request.TrackerObjectId, body, &response)
 			if err != nil {
 				return err
 			}
 			log.Println(request.RequestID, resp)
 		} else {
 			body := strings.NewReader(`{
-				"status":"success"
+				"status":"SUCCESS"
 			}`)
-			resp, err := httpClient.ParseClient("PUT", "https://dev-fab-api-gateway.thriwe.com/parse/classes/tracking", body, &response)
+			resp, err := httpClient.ParseClient("PUT", "https://dev-fab-api-gateway.thriwe.com/parse/classes/tracker/"+request.TrackerObjectId, body, &response)
 			if err != nil {
 				return err
 			}
