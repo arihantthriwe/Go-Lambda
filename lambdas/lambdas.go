@@ -9,7 +9,6 @@ import (
 	"golambda/utils"
 	"log"
 	"os"
-	"path/filepath"
 	"strings"
 	"time"
 
@@ -42,21 +41,26 @@ type Response struct {
 
 func Handler(ctx context.Context, sqsEvent events.SQSEvent) error {
 	var request Request
+	err := new(utils.ErrorHandler)
+	err = nil
 	AWS_S3_REGION := os.Getenv("AWS_S3_REGION")
 	AWS_S3_BUCKET := os.Getenv("AWS_S3_BUCKET")
 	AWS_ROOT_CERT_KEY := os.Getenv("AWS_ROOT_CERT_KEY")
 
 	cfg, errLoadDefaultConfig := config.LoadDefaultConfig(context.TODO(), config.WithRegion(AWS_S3_REGION))
 	if errLoadDefaultConfig != nil {
+		var devMessage string
+		var clientMessage string
 		var oe *smithy.OperationError
 		if errors.As(errLoadDefaultConfig, &oe) {
 			log.Printf("failed to loadconfig: %s, operation: %s, error: %v", oe.Service(), oe.Operation(), oe.Unwrap())
-			devMessage := fmt.Sprintf("failed to call service: %s, operation: %s, error: %v", oe.Service(), oe.Operation(), oe.Unwrap())
-			clientMessage := "Something went wrong while loading config"
-			err := &utils.ErrorHandler{DevMessage: devMessage, Message: clientMessage}
-			return err
+			devMessage = fmt.Sprintf("failed to call service: %s, operation: %s, error: %v", oe.Service(), oe.Operation(), oe.Unwrap())
+			clientMessage = "Something went wrong while loading config"
+		} else {
+			devMessage = errLoadDefaultConfig.Error()
+
 		}
-		return errLoadDefaultConfig
+		err = &utils.ErrorHandler{DevMessage: devMessage, Message: clientMessage}
 	}
 
 	awsS3Client := s3.NewFromConfig(cfg)
@@ -65,15 +69,18 @@ func Handler(ctx context.Context, sqsEvent events.SQSEvent) error {
 	rootCertFileName := "rootCert"
 	rootCertFile, errCreatefile := create(rootCertFileName)
 	if errCreatefile != nil {
+		var devMessage string
+		var clientMessage string
 		var oe *smithy.OperationError
 		if errors.As(errCreatefile, &oe) {
 			log.Printf("failed to create keyfile: %s, operation: %s, error: %v", oe.Service(), oe.Operation(), oe.Unwrap())
-			devMessage := fmt.Sprintf("failed to call service: %s, operation: %s, error: %v", oe.Service(), oe.Operation(), oe.Unwrap())
-			clientMessage := "Something went wrong while creating the Keyfile"
-			err := &utils.ErrorHandler{DevMessage: devMessage, Message: clientMessage}
-			return err
+			devMessage = fmt.Sprintf("failed to call service: %s, operation: %s, error: %v", oe.Service(), oe.Operation(), oe.Unwrap())
+			clientMessage = "Something went wrong while creating the Keyfile"
+		} else {
+			devMessage = errCreatefile.Error()
+
 		}
-		return errCreatefile
+		err = &utils.ErrorHandler{DevMessage: devMessage, Message: clientMessage}
 	}
 	defer rootCertFile.Close()
 
@@ -84,34 +91,49 @@ func Handler(ctx context.Context, sqsEvent events.SQSEvent) error {
 			Key:    aws.String(AWS_ROOT_CERT_KEY),
 		})
 	if errDownload != nil {
+		var devMessage string
+		var clientMessage string
 		var oe *smithy.OperationError
 		if errors.As(errCreatefile, &oe) {
 			log.Printf("failed to download rootfile: %s, operation: %s, error: %v", oe.Service(), oe.Operation(), oe.Unwrap())
-			devMessage := fmt.Sprintf("failed to call service: %s, operation: %s, error: %v", oe.Service(), oe.Operation(), oe.Unwrap())
-			clientMessage := "Something went wrong while downloading the rootfile"
-			err := &utils.ErrorHandler{DevMessage: devMessage, Message: clientMessage}
-			return err
+			devMessage = fmt.Sprintf("failed to call service: %s, operation: %s, error: %v", oe.Service(), oe.Operation(), oe.Unwrap())
+			clientMessage = "Something went wrong while downloading the rootfile"
+		} else {
+			devMessage = errDownload.Error()
+
 		}
-		return errDownload
+		err = &utils.ErrorHandler{DevMessage: devMessage, Message: clientMessage}
 	}
 	log.Println(numByteroot)
 
 	for _, message := range sqsEvent.Records {
 		fmt.Printf("Message Body queue: %s", message.Body)
-		err := json.Unmarshal([]byte(message.Body), &request)
-		if err != nil {
-			log.Fatalln(err)
+		errJson := json.Unmarshal([]byte(message.Body), &request)
+		if errJson != nil {
+			devMessage := err.Error()
+			err = &utils.ErrorHandler{DevMessage: devMessage}
 		}
 	}
 	log.Println(request.RequestID, "start")
 	fmt.Println(request, "request")
 	var response Response
+	if err != nil {
+		body := strings.NewReader(`{
+			"status":"FAILED",
+			"lambdaError":"` + err.DevMessage + `"
+		}`)
+		_, errParseTracker := httpClient.ParseClient("PUT", "https://dev-fab-api-gateway.thriwe.com/parse/classes/tracker/"+request.TrackerObjectId, body, &response)
+		if errParseTracker != nil {
+			return errParseTracker
+		}
+	}
+
 	body := strings.NewReader(`{
 		"status":"PROCESSING"
 	}`)
-	resp, err := httpClient.ParseClient("PUT", "https://dev-fab-api-gateway.thriwe.com/parse/classes/tracker/"+request.TrackerObjectId, body, &response)
-	if err != nil {
-		return err
+	resp, errParseTracker := httpClient.ParseClient("PUT", "https://dev-fab-api-gateway.thriwe.com/parse/classes/tracker/"+request.TrackerObjectId, body, &response)
+	if errParseTracker != nil {
+		return errParseTracker
 	}
 	log.Println(request.RequestID, resp)
 
@@ -236,8 +258,5 @@ func Handler(ctx context.Context, sqsEvent events.SQSEvent) error {
 }
 
 func create(p string) (*os.File, error) {
-	if err := os.MkdirAll(filepath.Dir("/tmp/"), 0770); err != nil {
-		return nil, err
-	}
-	return os.Create(p)
+	return os.Create("/tmp/" + p)
 }
