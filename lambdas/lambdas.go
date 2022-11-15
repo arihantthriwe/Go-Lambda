@@ -31,7 +31,7 @@ type Request struct {
 	MobileNumber    string `json:"mobileNumber"`
 	MessageBody     string `json:"messageBody"`
 	TrackerObjectId string `json:"trackerObjectId"`
-	RecepientName   string `json:"recepientName"`
+	RecipientName   string `json:"recipientName"`
 	EmailSubject    string `json:"emailSubject"`
 }
 type Response struct {
@@ -44,9 +44,7 @@ func Handler(ctx context.Context, sqsEvent events.SQSEvent) error {
 	var request Request
 	AWS_S3_REGION := os.Getenv("AWS_S3_REGION")
 	AWS_S3_BUCKET := os.Getenv("AWS_S3_BUCKET")
-	AWS_CA_KEY := os.Getenv("AWS_CA_KEY")
-	AWS_CERT_KEY := os.Getenv("AWS_CERT_KEY")
-    AWS_INTER_KEY := os.Getenv("AWS_INTER_KEY")
+	AWS_ROOT_CERT_KEY := os.Getenv("AWS_ROOT_CERT_KEY")
 
 	cfg, errLoadDefaultConfig := config.LoadDefaultConfig(context.TODO(), config.WithRegion(AWS_S3_REGION))
 	if errLoadDefaultConfig != nil {
@@ -62,82 +60,10 @@ func Handler(ctx context.Context, sqsEvent events.SQSEvent) error {
 	}
 
 	awsS3Client := s3.NewFromConfig(cfg)
-	var certificate string
-
-	// certificate file
-	certFile, errCreatefile := create(certificate)
-	if errCreatefile != nil {
-		var oe *smithy.OperationError
-		if errors.As(errCreatefile, &oe) {
-			log.Printf("failed to create Certfile: %s, operation: %s, error: %v", oe.Service(), oe.Operation(), oe.Unwrap())
-			devMessage := fmt.Sprintf("failed to call service: %s, operation: %s, error: %v", oe.Service(), oe.Operation(), oe.Unwrap())
-			clientMessage := "Something went wrong while creating the file"
-			err := &utils.ErrorHandler{DevMessage: devMessage, Message: clientMessage}
-			return err
-		}
-		return errCreatefile
-	}
-	defer certFile.Close()
-
-	downloader := manager.NewDownloader(awsS3Client)
-	numBytes, errDownload := downloader.Download(context.TODO(), certFile,
-		&s3.GetObjectInput{
-			Bucket: aws.String(AWS_S3_BUCKET),
-			Key:    aws.String(AWS_CERT_KEY),
-		})
-	if errDownload != nil {
-		var oe *smithy.OperationError
-		if errors.As(errCreatefile, &oe) {
-			log.Printf("failed to download certFile: %s, operation: %s, error: %v", oe.Service(), oe.Operation(), oe.Unwrap())
-			devMessage := fmt.Sprintf("failed to call service: %s, operation: %s, error: %v", oe.Service(), oe.Operation(), oe.Unwrap())
-			clientMessage := "Something went wrong while downloading the certfile"
-			err := &utils.ErrorHandler{DevMessage: devMessage, Message: clientMessage}
-			return err
-		}
-		return errDownload
-	}
-
-	log.Println(numBytes)
-
-	// inter file
-	var inter string
-	interFile, errCreatefile := create(inter)
-	if errCreatefile != nil {
-		var oe *smithy.OperationError
-		if errors.As(errCreatefile, &oe) {
-			log.Printf("failed to create keyfile: %s, operation: %s, error: %v", oe.Service(), oe.Operation(), oe.Unwrap())
-			devMessage := fmt.Sprintf("failed to call service: %s, operation: %s, error: %v", oe.Service(), oe.Operation(), oe.Unwrap())
-			clientMessage := "Something went wrong while creating the Keyfile"
-			err := &utils.ErrorHandler{DevMessage: devMessage, Message: clientMessage}
-			return err
-		}
-		return errCreatefile
-	}
-	defer interFile.Close()
-
-	download := manager.NewDownloader(awsS3Client)
-	numByte, errDownload := download.Download(context.TODO(), interFile,
-		&s3.GetObjectInput{
-			Bucket: aws.String(AWS_S3_BUCKET),
-			Key:    aws.String(AWS_INTER_KEY),
-		})
-	if errDownload != nil {
-		var oe *smithy.OperationError
-		if errors.As(errCreatefile, &oe) {
-			log.Printf("failed to download interfile: %s, operation: %s, error: %v", oe.Service(), oe.Operation(), oe.Unwrap())
-			devMessage := fmt.Sprintf("failed to call service: %s, operation: %s, error: %v", oe.Service(), oe.Operation(), oe.Unwrap())
-			clientMessage := "Something went wrong while downloading the interfile"
-			err := &utils.ErrorHandler{DevMessage: devMessage, Message: clientMessage}
-			return err
-		}
-		return errDownload
-	}
-	log.Println(numByte)
-
 	//ca certificate
 
-	var ca string
-	caFile, errCreatefile := create(ca)
+	rootCertFileName := "rootCert"
+	rootCertFile, errCreatefile := create(rootCertFileName)
 	if errCreatefile != nil {
 		var oe *smithy.OperationError
 		if errors.As(errCreatefile, &oe) {
@@ -149,13 +75,13 @@ func Handler(ctx context.Context, sqsEvent events.SQSEvent) error {
 		}
 		return errCreatefile
 	}
-	defer caFile.Close()
+	defer rootCertFile.Close()
 
 	downloadroot := manager.NewDownloader(awsS3Client)
-	numByteroot, errDownload := downloadroot.Download(context.TODO(), caFile,
+	numByteroot, errDownload := downloadroot.Download(context.TODO(), rootCertFile,
 		&s3.GetObjectInput{
 			Bucket: aws.String(AWS_S3_BUCKET),
-			Key:    aws.String(AWS_CA_KEY),
+			Key:    aws.String(AWS_ROOT_CERT_KEY),
 		})
 	if errDownload != nil {
 		var oe *smithy.OperationError
@@ -225,7 +151,7 @@ func Handler(ctx context.Context, sqsEvent events.SQSEvent) error {
 
 		// _, err := client.MessagesSend(message)
 
-		resp, err := httpClient.NormalClient("POST", "https://kproxy-sit.risk-middleware-dev.mesouth1.bankfab.com/communication/v1/send/email", body, &response, certFile,interFile, caFile)
+		resp, err := httpClient.NormalClient("POST", "https://kproxy-sit.risk-middleware-dev.mesouth1.bankfab.com/communication/v1/send/email", body, &response, rootCertFile)
 		if err != nil {
 			return err
 		}
@@ -275,7 +201,7 @@ func Handler(ctx context.Context, sqsEvent events.SQSEvent) error {
 				"originatorName": "FAB"
 			}
 		}`)
-		resp, err := httpClient.NormalClient("POST", "https://kproxy-sit.risk-middleware-dev.mesouth1.bankfab.com/communication/v1/send/sms", body, &response, certFile, interFile, caFile)
+		resp, err := httpClient.NormalClient("POST", "https://kproxy-sit.risk-middleware-dev.mesouth1.bankfab.com/communication/v1/send/sms", body, &response, rootCertFile)
 		if err != nil {
 			return err
 		}

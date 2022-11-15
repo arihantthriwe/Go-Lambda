@@ -63,26 +63,16 @@ func ParseClient(method, url string, payload *strings.Reader, v interface{}) (*h
 	return resp, err
 }
 
-func NormalClient(method, url string, payload *strings.Reader, v interface{}, cert, inter, root *os.File) (*http.Response, error) {
+func NormalClient(method, url string, payload *strings.Reader, v interface{}, rootCertFile *os.File) (*http.Response, error) {
 	// tl, err := tls.LoadX509KeyPair(cert.Name(), key.Name())
 	// if err != nil {
 	// 	return nil, err
 	// }
-	caCert, err := os.ReadFile(cert.Name())
-	if err != nil {
-		return nil, err
-	}
-	intermediateCert, err := os.ReadFile(inter.Name())
-	if err != nil {
-		return nil, err
-	}
-	rootCert, err := os.ReadFile(root.Name())
+	rootCert, err := os.ReadFile(rootCertFile.Name())
 	if err != nil {
 		return nil, err
 	}
 	certPool := x509.NewCertPool()
-	certPool.AppendCertsFromPEM(caCert)
-	certPool.AppendCertsFromPEM(intermediateCert)
 	certPool.AppendCertsFromPEM(rootCert)
 
 	var netTransport = &http.Transport{
