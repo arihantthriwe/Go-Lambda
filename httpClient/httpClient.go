@@ -6,10 +6,9 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
-	"io/ioutil"
-	"log"
 	"net"
 	"net/http"
+	"os"
 	"strings"
 	"time"
 )
@@ -34,6 +33,7 @@ func ParseClient(method, url string, payload *strings.Reader, v interface{}) (*h
 	req.Header.Add("X-Parse-Master-Key", "DEV_MASTER_KEY")
 	req.Header.Add("X-Parse-Application-Id", "DEV_APPLICATION_ID")
 	req.Header.Add("Content-Type", "application/json")
+	req.Header.Add("X-Auth-Server", "1")
 
 	resp, err := http_client.Do(req)
 	if err != nil {
@@ -63,13 +63,27 @@ func ParseClient(method, url string, payload *strings.Reader, v interface{}) (*h
 	return resp, err
 }
 
-func NormalClient(method, url string, payload *strings.Reader, v interface{}) (*http.Response, error) {
-	caCert, err := ioutil.ReadFile("rootCA.crt")
+func NormalClient(method, url string, payload *strings.Reader, v interface{}, cert, inter, root *os.File) (*http.Response, error) {
+	// tl, err := tls.LoadX509KeyPair(cert.Name(), key.Name())
+	// if err != nil {
+	// 	return nil, err
+	// }
+	caCert, err := os.ReadFile(cert.Name())
 	if err != nil {
-		log.Fatal(err)
+		return nil, err
 	}
-	caCertPool := x509.NewCertPool()
-	caCertPool.AppendCertsFromPEM(caCert)
+	intermediateCert, err := os.ReadFile(inter.Name())
+	if err != nil {
+		return nil, err
+	}
+	rootCert, err := os.ReadFile(root.Name())
+	if err != nil {
+		return nil, err
+	}
+	certPool := x509.NewCertPool()
+	certPool.AppendCertsFromPEM(caCert)
+	certPool.AppendCertsFromPEM(intermediateCert)
+	certPool.AppendCertsFromPEM(rootCert)
 
 	var netTransport = &http.Transport{
 		Dial: (&net.Dialer{
@@ -79,8 +93,7 @@ func NormalClient(method, url string, payload *strings.Reader, v interface{}) (*
 		MaxIdleConns:        10,
 		IdleConnTimeout:     10 * time.Second,
 		TLSClientConfig: &tls.Config{
-			RootCAs: caCertPool,
-			
+			RootCAs: certPool,
 		},
 	}
 	http_client := &http.Client{
