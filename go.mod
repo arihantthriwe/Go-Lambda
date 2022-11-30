@@ -11,6 +11,8 @@ require (
 	github.com/keighl/mandrill v0.0.0-20170605120353-1775dd4b3b41
 )
 
+require golang.org/x/net v0.1.0 // indirect
+
 require (
 	github.com/aws/aws-sdk-go-v2 v1.17.1 // indirect
 	github.com/aws/aws-sdk-go-v2/aws/protocol/eventstream v1.4.9 // indirect
@@ -28,5 +30,6 @@ require (
 	github.com/aws/aws-sdk-go-v2/service/ssooidc v1.13.8 // indirect
 	github.com/aws/aws-sdk-go-v2/service/sts v1.17.2 // indirect
 	github.com/aws/smithy-go v1.13.4 // indirect
+	github.com/carlmjohnson/requests v0.22.3
 	github.com/jmespath/go-jmespath v0.4.0 // indirect
 )
