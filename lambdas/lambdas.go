@@ -382,6 +382,14 @@ log.Println(numByteCertKey)
 	log.Println("requestId--> ", request.RequestID, "response--> ", processingResp)
 	check, errProfanityCheck := httpClient.ProfanityCheck(request.MessageBody, request.TrackerObjectId, request.ProjectCode)
 	if !check || errProfanityCheck != nil{
+		profanityCheckFailedBody := strings.NewReader(`{
+			"status": "FAILED FAB API(profanity-check failed)"
+		}`)
+		trackerResp, errParseTracker := httpClient.ParseClient("PUT", "https://dev-fab-api-gateway.thriwe.com/parse/classes/tracker/"+request.TrackerObjectId, profanityCheckFailedBody, &response)
+		if errParseTracker != nil {
+			return nil
+		}
+		log.Println("requestId--> ", request.RequestID, "response--> ", trackerResp)
 		return nil
 	}
 	if request.CommsID == "1" {
