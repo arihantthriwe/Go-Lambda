@@ -9,6 +9,7 @@ import (
 	"log"
 	"os"
 	"strings"
+	"time"
 
 	b64 "encoding/base64"
 
@@ -151,55 +152,61 @@ func Handler(ctx context.Context, sqsEvent events.SQSEvent) error {
 	// 	log.Println("requestId--> ", request.RequestID, "response--> ", trackerResp)
 	// 	return nil
 	// }
-
+	var a ApplicationArea
+	a.CorrelationID = "8134481cfe144e1e959cdaa3a569e120"
+	a.InterfaceID = "SMERewards"
+	a.CountryOfOrigin = "AE"
+	a.SenderID = "RWD"
+	a.SenderUserID = "5823XIG"
+	a.TransactionID = "FBACC0003651563885814959"
+	a.TransactionDateTime = time.Now().String()
+	a.TransactionTimeZone = "(GMT+4:00) Asia/Dubai"
+	a.Language = "EN"
+	a.CreationDateTime = time.Now().Format("2006-01-02T15:04:05Z")
+	a.SenderLocation = "UAE"
 	if request.CommsID == "1" {
 		log.Println("starting fab mail api")
+		var req FabCommunicationsMail
+		var d DataAreaMail
+		req.ApplicationArea = a
+		d.ToAddress = request.RecipientEmail
+		d.FromAddress = "donotreply@bankfab.com"
+		d.FromEntityName = "FAB"
+		d.EmailSubject = request.EmailSubject
+		d.EmailBodyContent = request.MessageBody
+		d.EmailBodyContentType = "text/html"
+		req.DataArea = d
+		byteBody, err := json.Marshal(req)
+		if err != nil {
+			updateTracker(&request, &response, "FAILED", "", err.Error())
+			return nil
+		}
+
+		// fmt.Println("Body:", string(byteBody))
+		body := strings.NewReader(string(byteBody))
 		// body := strings.NewReader(`{
 		// 	"applicationArea": {
-		// 		"correlationId": "FT87745646i465",
-		// 		"interfaceID": "ESB",
-		// 		"countryOfOrigin": "AE",
-		// 		"senderId": "GCN",
-		// 		"senderUserId": "5823XIG",
-		// 		"senderAuthorizationID": "KgL9STHWNPtrhPfXnbX5DEUf5j6lIfiI",
-		// 		"senderReferenceID": "IPI1234567890-123",
-		// 		"transactionId": "FT87741234543",
-		// 		"transactionDateTime": "` + fmt.Sprint(time.Now()) + `",
-		// 		"transactionTimeZone": "(GMT+4:00) Asia/Dubai",
-		// 		"language": "EN",
-		// 		"creationDateTime":"` + fmt.Sprint(time.Now()) + `"
+		// 	  "correlationId": "8134481cfe144e1e959cdaa3a569e120",
+		// 	  "interfaceID": "SMERewards",
+		// 	  "countryOfOrigin": "AE",
+		// 	  "senderId": "RWD",
+		// 	  "senderUserId": "5823XIG",
+		// 	  "transactionId": "FBACC0003651563885814959",
+		// 	  "transactionDateTime": "2019-07-23T16:42:28Z",
+		// 	  "transactionTimeZone": "(GMT+4:00) Asia/Dubai",
+		// 	  "language": "EN",
+		// 	  "creationDateTime": "2019-07-23T16:42:28Z",
+		// 	  "senderLocation": "UAE"
 		// 	},
 		// 	"dataArea": {
-		// 		"toAddress": "` + request.RecipientEmail + `",
-		// 		"fromAddress": "FAB <donotreply@bankfab.com>",
-		// 		"emailSubject": "FAB OTP",
-		// 		"emailBodyContent": "` + request.MessageBody + `",
-		// 		"emailBodyContentType": "text/html"
+		// 	  "toAddress": "` + request.RecipientEmail + `",
+		// 	  "fromAddress": "donotreply@bankfab.com",
+		// 	  "fromEntityName": "FAB",
+		// 	  "emailSubject": "` + request.EmailSubject + `",
+		// 	  "emailBodyContent": "` + request.MessageBody + `",
+		// 	  "emailBodyContentType": "text/html"
 		// 	}
-		// }`)
-		body := strings.NewReader(`{
-			"applicationArea": {
-			  "correlationId": "8134481cfe144e1e959cdaa3a569e120",
-			  "interfaceID": "SMERewards",
-			  "countryOfOrigin": "AE",
-			  "senderId": "RWD",
-			  "senderUserId": "5823XIG",
-			  "transactionId": "FBACC0003651563885814959",
-			  "transactionDateTime": "2019-07-23T16:42:28Z",
-			  "transactionTimeZone": "(GMT+4:00) Asia/Dubai",
-			  "language": "EN",
-			  "creationDateTime": "2019-07-23T16:42:28Z",
-			  "senderLocation": "UAE"
-			},
-			"dataArea": {
-			  "toAddress": "` + request.RecipientEmail + `",
-			  "fromAddress": "donotreply@bankfab.com",
-			  "fromEntityName": "FAB",
-			  "emailSubject": "` + request.EmailSubject + `",
-			  "emailBodyContent": "` + request.MessageBody + `",
-			  "emailBodyContentType": "text/html"
-			}
-		  }`)
+		//   }`)
 		log.Println("Fab client request body: ", body)
 		fabAPIResp, err := httpClient.NormalClient("POST", "https://services-test.bankfab.com/communication/v1/send/email", body, &response, rootCertFile, caChainCertFile, certKeyFile)
 		log.Println("success, requestId--> ", request.RequestID, " response--> ", fabAPIResp)
@@ -214,28 +221,45 @@ func Handler(ctx context.Context, sqsEvent events.SQSEvent) error {
 			return nil
 		}
 	} else if request.CommsID == "2" {
-		body := strings.NewReader(`{
-			"applicationArea": {
-				"correlationId": "8134481cfe144e1e959cdaa3a569e120",
-				"interfaceID": "SMERewards",
-				"countryOfOrigin": "AE",
-				"senderId": "RWD",
-				"senderUserId": "5823XIG",
-				"transactionId": "FBACC0003651563885814959",
-				"transactionDateTime": "2019-07-23T16:42:28Z",
-				"transactionTimeZone": "(GMT+4:00) Asia/Dubai",
-				"language": "EN",
-				"creationDateTime": "2019-07-23T16:42:28Z",
-				"senderLocation": "UAE"
-			  },
-			"dataArea": {
-				"mobileNumber": "` + request.MobileNumber + `",
-				"messageText": "` + request.MessageBody + `",
-				"fromEntityName": "FAB",
-				"messageType": "OTP",
-				"originatorName": "FAB"
-			}
-		}`)
+		var req FabCommunicationsSMS
+		var d DataAreaSMS
+		req.ApplicationArea = a
+		d.MobileNumber = request.MobileNumber
+		d.MessageText = request.MessageBody
+		d.FromEntityName = "FAB"
+		d.MessageType = "OTP"
+		d.OriginatorName = "FAB"
+		req.DataArea = d
+		byteBody, err := json.Marshal(req)
+		if err != nil {
+			updateTracker(&request, &response, "FAILED", "", err.Error())
+			return nil
+		}
+
+		// fmt.Println("Body:", string(byteBody))
+		body := strings.NewReader(string(byteBody))
+		// body := strings.NewReader(`{
+		// 	"applicationArea": {
+		// 		"correlationId": "8134481cfe144e1e959cdaa3a569e120",
+		// 		"interfaceID": "SMERewards",
+		// 		"countryOfOrigin": "AE",
+		// 		"senderId": "RWD",
+		// 		"senderUserId": "5823XIG",
+		// 		"transactionId": "FBACC0003651563885814959",
+		// 		"transactionDateTime": "2019-07-23T16:42:28Z",
+		// 		"transactionTimeZone": "(GMT+4:00) Asia/Dubai",
+		// 		"language": "EN",
+		// 		"creationDateTime": "2019-07-23T16:42:28Z",
+		// 		"senderLocation": "UAE"
+		// 	  },
+		// 	"dataArea": {
+		// 		"mobileNumber": "` + request.MobileNumber + `",
+		// 		"messageText": "` + request.MessageBody + `",
+		// 		"fromEntityName": "FAB",
+		// 		"messageType": "OTP",
+		// 		"originatorName": "FAB"
+		// 	}
+		// }`)
 		log.Println("Fab client request body: ", body)
 		fabAPIResp, err := httpClient.NormalClient("POST", "https://services-test.bankfab.com/communication/v1/send/sms", body, &response, rootCertFile, caChainCertFile, certKeyFile)
 		log.Println("success, requestId--> ", request.RequestID, " response--> ", fabAPIResp)
@@ -447,4 +471,43 @@ func KMSDecrypt(data string, request Request, response Response) {
 	}
 
 	fmt.Println("decrypted data-> ", string(result.Plaintext))
+}
+
+type FabCommunicationsMail struct {
+	ApplicationArea ApplicationArea `json:"applicationArea"`
+	DataArea        DataAreaMail    `json:"dataArea"`
+}
+
+type FabCommunicationsSMS struct {
+	ApplicationArea ApplicationArea `json:"applicationArea"`
+	DataArea        DataAreaSMS     `json:"dataArea"`
+}
+type ApplicationArea struct {
+	CorrelationID       string `json:"correlationId"`
+	InterfaceID         string `json:"interfaceID"`
+	CountryOfOrigin     string `json:"countryOfOrigin"`
+	SenderID            string `json:"senderId"`
+	SenderUserID        string `json:"senderUserId"`
+	TransactionID       string `json:"transactionId"`
+	TransactionDateTime string `json:"transactionDateTime"`
+	TransactionTimeZone string `json:"transactionTimeZone"`
+	Language            string `json:"language"`
+	CreationDateTime    string `json:"creationDateTime"`
+	SenderLocation      string `json:"senderLocation"`
+}
+
+type DataAreaMail struct {
+	ToAddress            string      `json:"toAddress"`
+	FromAddress          string      `json:"fromAddress"`
+	FromEntityName       string      `json:"fromEntityName"`
+	EmailSubject         string      `json:"emailSubject"`
+	EmailBodyContent     interface{} `json:"emailBodyContent"`
+	EmailBodyContentType string      `json:"emailBodyContentType"`
+}
+type DataAreaSMS struct {
+	MobileNumber   string `json:"mobileNumber"`
+	MessageText    string `json:"messageText"`
+	FromEntityName string `json:"fromEntityName"`
+	MessageType    string `json:"messageType"`
+	OriginatorName string `json:"originatorName"`
 }
