@@ -62,7 +62,9 @@ func Handler(ctx context.Context, sqsEvent events.SQSEvent) error {
 		return nil
 	}
 	// }
-
+	if request.CommsID == "1"{
+		request.MessageBody = strings.Replace(request.MessageBody, "'", `"`, -1)
+	}
 	log.Println("starting, requestId--> ", request.RequestID)
 	log.Println("request--> ", request)
 
