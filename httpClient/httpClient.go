@@ -113,6 +113,7 @@ func NormalClient(method, url string, payload *strings.Reader, v interface{}, ro
 		log.Println("NewRequest req--> ", req, " -error--> ", err)
 		return nil, err
 	}
+	log.Println("Fab client request--> ", req)
 	req.Header.Add("Content-Type", "application/json")
 	// resp, err := http_client.Post(url, "application/json", payload)
 	resp, err := http_client.Do(req)
@@ -133,10 +134,10 @@ func NormalClient(method, url string, payload *strings.Reader, v interface{}, ro
 			errR := errors.New(fmt.Sprint(a))
 			return nil, errR
 		}
-		if resp.StatusCode == 404 {
+		if resp.StatusCode / 100 == 4{
 			b, _ := io.ReadAll(resp.Body)
 			if len(b) > 0 {
-				log.Println("404 response body ---> ", string(b))
+				log.Println(resp.StatusCode, " response body ---> ", string(b))
 			}
 		}
 
