@@ -19,6 +19,8 @@ import (
 )
 
 func ParseClient(method, url string, payload *strings.Reader, v interface{}) (*http.Response, error) {
+	PARSE_MASTER_KEY := os.Getenv("PARSE_MASTER_KEY")
+	PARSE_APPLICATION_ID := os.Getenv("PARSE_APPLICATION_ID")
 	var netTransport = &http.Transport{
 		Dial: (&net.Dialer{
 			Timeout: 1 * time.Minute,
@@ -35,8 +37,8 @@ func ParseClient(method, url string, payload *strings.Reader, v interface{}) (*h
 	if err != nil {
 		return nil, err
 	}
-	req.Header.Add("X-Parse-Master-Key", "PROD_MASTER_KEY")
-	req.Header.Add("X-Parse-Application-Id", "PROD_APPLICATION_ID")
+	req.Header.Add("X-Parse-Master-Key", PARSE_MASTER_KEY)
+	req.Header.Add("X-Parse-Application-Id", PARSE_APPLICATION_ID)
 	req.Header.Add("Content-Type", "application/json")
 	req.Header.Add("X-Auth-Server", "1")
 

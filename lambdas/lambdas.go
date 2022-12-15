@@ -45,6 +45,8 @@ type Response struct {
 }
 
 var PARSE_AUTH_TRACKER_BASEURL string
+var PARSE_MASTER_KEY string
+var PARSE_APPLICATION_ID string
 
 func Handler(ctx context.Context, sqsEvent events.SQSEvent) error {
 	var request Request
@@ -56,9 +58,13 @@ func Handler(ctx context.Context, sqsEvent events.SQSEvent) error {
 	FAB_SMS_ENDPOINT := os.Getenv("FAB_SMS_ENDPOINT")
 	FAB_MAIL_ENDPOINT := os.Getenv("FAB_MAIL_ENDPOINT")
 	PARSE_AUTH_TRACKER_BASEURL = os.Getenv("PARSE_AUTH_TRACKER_BASEURL")
+	PARSE_MASTER_KEY := os.Getenv("PARSE_MASTER_KEY")
+	PARSE_APPLICATION_ID := os.Getenv("PARSE_APPLICATION_ID")
 	log.Println("Fab Sms Endpoint: ", FAB_SMS_ENDPOINT)
 	log.Println("Fab Mail Endpoint: ", FAB_MAIL_ENDPOINT)
 	log.Println("Parse Auth Tracker Baseurl: ", PARSE_AUTH_TRACKER_BASEURL)
+	log.Println("Parse Master Key: ", PARSE_MASTER_KEY)
+	log.Println("Parse Application Id: ", PARSE_APPLICATION_ID)
 	var response Response
 	// log.Println("starting KMS Encryption&Decryption")
 	// KMSEncrypt(request, response)
@@ -232,8 +238,8 @@ func Handler(ctx context.Context, sqsEvent events.SQSEvent) error {
 		if fabAPIResp != nil {
 			if fabAPIResp.StatusCode != 200{
 				updateTracker(&request, &response, "FAILED (FAB API status code:- ` + fmt.Sprint(fabAPIResp.StatusCode) + `)", err.Error(), "")
+				return nil
 			}
-			return nil
 		}
 	} else if request.CommsID == "2" {
 		var reqSms FabCommunicationsSMS
@@ -287,8 +293,8 @@ func Handler(ctx context.Context, sqsEvent events.SQSEvent) error {
 		if fabAPIResp != nil {
 			if fabAPIResp.StatusCode != 200{
 				updateTracker(&request, &response, "FAILED (FAB API status code:- ` + fmt.Sprint(fabAPIResp.StatusCode) + `)", err.Error(), "")
+				return nil
 			}
-			return nil
 		}
 	} else if request.CommsID == "3" {
 		request.EmailMessageBody = strings.Replace(request.EmailMessageBody, "\n", "", -1)
@@ -344,8 +350,8 @@ func Handler(ctx context.Context, sqsEvent events.SQSEvent) error {
 		if fabAPIResp != nil {
 			if fabAPIResp.StatusCode != 200{
 				updateTracker(&request, &response, "FAILED (FAB API status code:- ` + fmt.Sprint(fabAPIResp.StatusCode) + `)", err.Error(), "")
+				return nil
 			}
-			return nil
 		}
 
 		var reqSms FabCommunicationsSMS
@@ -399,8 +405,8 @@ func Handler(ctx context.Context, sqsEvent events.SQSEvent) error {
 		if fabAPIResp != nil {
 			if fabAPIResp.StatusCode != 200{
 				updateTracker(&request, &response, "FAILED (FAB API status code:- ` + fmt.Sprint(fabAPIResp.StatusCode) + `)", err.Error(), "")
+				return nil
 			}
-			return nil
 		}
 
 	} else {
