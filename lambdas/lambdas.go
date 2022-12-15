@@ -7,6 +7,7 @@ import (
 	"fmt"
 	"golambda/httpClient"
 	"log"
+	"net/http"
 	"os"
 	"strings"
 	"time"
@@ -43,6 +44,8 @@ type Response struct {
 	Error  string `json:"error"`
 }
 
+var PARSE_AUTH_TRACKER_BASEURL string
+
 func Handler(ctx context.Context, sqsEvent events.SQSEvent) error {
 	var request Request
 	AWS_S3_REGION := os.Getenv("AWS_S3_REGION")
@@ -50,6 +53,12 @@ func Handler(ctx context.Context, sqsEvent events.SQSEvent) error {
 	AWS_ROOT_CERT_S3_KEY := os.Getenv("AWS_ROOT_CERT_S3_KEY")
 	AWS_CA_CHAIN_CERT_S3_KEY := os.Getenv("AWS_CA_CHAIN_CERT_S3_KEY")
 	AWS_ROOT_CERT_KEY_S3_KEY := os.Getenv("AWS_ROOT_CERT_KEY_S3_KEY")
+	FAB_SMS_ENDPOINT := os.Getenv("FAB_SMS_ENDPOINT")
+	FAB_MAIL_ENDPOINT := os.Getenv("FAB_MAIL_ENDPOINT")
+	PARSE_AUTH_TRACKER_BASEURL = os.Getenv("PARSE_AUTH_TRACKER_BASEURL")
+	log.Println("Fab Sms Endpoint: ", FAB_SMS_ENDPOINT)
+	log.Println("Fab Mail Endpoint: ", FAB_MAIL_ENDPOINT)
+	log.Println("Parse Auth Tracker Baseurl: ", PARSE_AUTH_TRACKER_BASEURL)
 	var response Response
 	// log.Println("starting KMS Encryption&Decryption")
 	// KMSEncrypt(request, response)
@@ -63,8 +72,8 @@ func Handler(ctx context.Context, sqsEvent events.SQSEvent) error {
 		return nil
 	}
 	// }
-	request.EmailMessageBody = strings.Replace(request.EmailMessageBody, "'", `"`, -1)
-	request.EmailMessageBody = strings.Replace(request.EmailMessageBody, "^", "\n", -1)
+	request.EmailMessageBody = strings.Replace(request.EmailMessageBody, "$", `"`, -1)
+	request.EmailMessageBody = strings.Replace(request.EmailMessageBody, "^", "", -1)
 	request.SmsMessageBody = strings.Replace(request.SmsMessageBody, "'", `"`, -1)
 	request.SmsMessageBody = strings.Replace(request.SmsMessageBody, "^", "\n", -1)
 	log.Println("starting, requestId--> ", request.RequestID)
@@ -169,6 +178,7 @@ func Handler(ctx context.Context, sqsEvent events.SQSEvent) error {
 	a.CreationDateTime = time.Now().Format("2006-01-02T15:04:05Z")
 	a.SenderLocation = "UAE"
 	if request.CommsID == "1" {
+		request.EmailMessageBody = strings.Replace(request.EmailMessageBody, "\n", "", -1)
 		log.Println("starting fab mail api")
 		var req FabCommunicationsMail
 		var d DataAreaMail
@@ -212,16 +222,17 @@ func Handler(ctx context.Context, sqsEvent events.SQSEvent) error {
 		// 	}
 		//   }`)
 		log.Println("Fab client request body email: ", body)
-		fabAPIResp, err := httpClient.NormalClient("POST", "https://services-test.bankfab.com/communication/v1/send/email", body, &response, rootCertFile, caChainCertFile, certKeyFile)
+		fabAPIResp, err := httpClient.NormalClient(http.MethodPost, FAB_MAIL_ENDPOINT, body, &response, rootCertFile, caChainCertFile, certKeyFile)
 		log.Println("success fab email, requestId--> ", request.RequestID, " response--> ", fabAPIResp)
 		if err != nil {
-			log.Println("fab mail api response", fabAPIResp)
 			log.Println("fab mail api err", err)
 			updateTracker(&request, &response, "FAILED FAB API(connection error)", fmt.Sprint(strings.Replace(err.Error(), "\"", "'", -1)), "")
 			return nil
 		}
-		if fabAPIResp.StatusCode != 200 {
-			updateTracker(&request, &response, "FAILED (FAB API status code:- ` + fmt.Sprint(fabAPIResp.StatusCode) + `)", err.Error(), "")
+		if fabAPIResp != nil {
+			if fabAPIResp.StatusCode != 200{
+				updateTracker(&request, &response, "FAILED (FAB API status code:- ` + fmt.Sprint(fabAPIResp.StatusCode) + `)", err.Error(), "")
+			}
 			return nil
 		}
 	} else if request.CommsID == "2" {
@@ -265,7 +276,7 @@ func Handler(ctx context.Context, sqsEvent events.SQSEvent) error {
 		// 	}
 		// }`)
 		log.Println("Fab client request body sms: ", bodySms)
-		fabAPIResp, err := httpClient.NormalClient("POST", "https://services-test.bankfab.com/communication/v1/send/sms", bodySms, &response, rootCertFile, caChainCertFile, certKeyFile)
+		fabAPIResp, err := httpClient.NormalClient("POST", FAB_SMS_ENDPOINT, bodySms, &response, rootCertFile, caChainCertFile, certKeyFile)
 		log.Println("success fab sms, requestId--> ", request.RequestID, " response--> ", fabAPIResp)
 		if err != nil {
 			log.Println("fab sms api response", fabAPIResp)
@@ -273,12 +284,14 @@ func Handler(ctx context.Context, sqsEvent events.SQSEvent) error {
 			updateTracker(&request, &response, "FAILED FAB API(connection error)", fmt.Sprint(strings.Replace(err.Error(), "\"", "'", -1)), "")
 			return nil
 		}
-		if fabAPIResp.StatusCode != 200 {
-			updateTracker(&request, &response, "FAILED (FAB API status code:- ` + fmt.Sprint(fabAPIResp.StatusCode) + `)", err.Error(), "")
+		if fabAPIResp != nil {
+			if fabAPIResp.StatusCode != 200{
+				updateTracker(&request, &response, "FAILED (FAB API status code:- ` + fmt.Sprint(fabAPIResp.StatusCode) + `)", err.Error(), "")
+			}
 			return nil
 		}
 	} else if request.CommsID == "3" {
-
+		request.EmailMessageBody = strings.Replace(request.EmailMessageBody, "\n", "", -1)
 		log.Println("starting fab mail api")
 		var req FabCommunicationsMail
 		var d DataAreaMail
@@ -321,15 +334,18 @@ func Handler(ctx context.Context, sqsEvent events.SQSEvent) error {
 		// 	}
 		//   }`)
 		log.Println("Fab client request body for mail: ", body)
-		fabAPIResp, err := httpClient.NormalClient("POST", "https://services-test.bankfab.com/communication/v1/send/email", body, &response, rootCertFile, caChainCertFile, certKeyFile)
+		fabAPIResp, err := httpClient.NormalClient("POST", FAB_MAIL_ENDPOINT, body, &response, rootCertFile, caChainCertFile, certKeyFile)
 		log.Println("success fab mail, requestId--> ", request.RequestID, " response--> ", fabAPIResp)
 		if err != nil {
 			log.Println("fab mail api response", fabAPIResp)
 			log.Println("fab mail api err", err)
 			updateTracker(&request, &response, "FAILED FAB API(connection error)", fmt.Sprint(strings.Replace(err.Error(), "\"", "'", -1)), "")
 		}
-		if fabAPIResp.StatusCode != 200 {
-			updateTracker(&request, &response, "FAILED (FAB API status code:- ` + fmt.Sprint(fabAPIResp.StatusCode) + `)", err.Error(), "")
+		if fabAPIResp != nil {
+			if fabAPIResp.StatusCode != 200{
+				updateTracker(&request, &response, "FAILED (FAB API status code:- ` + fmt.Sprint(fabAPIResp.StatusCode) + `)", err.Error(), "")
+			}
+			return nil
 		}
 
 		var reqSms FabCommunicationsSMS
@@ -372,7 +388,7 @@ func Handler(ctx context.Context, sqsEvent events.SQSEvent) error {
 		// 	}
 		// }`)
 		log.Println("Fab client request body for sms: ", bodySms)
-		fabAPIResp, err = httpClient.NormalClient("POST", "https://services-test.bankfab.com/communication/v1/send/sms", bodySms, &response, rootCertFile, caChainCertFile, certKeyFile)
+		fabAPIResp, err = httpClient.NormalClient("POST", FAB_SMS_ENDPOINT, bodySms, &response, rootCertFile, caChainCertFile, certKeyFile)
 		log.Println("success fab sms, requestId--> ", request.RequestID, " response--> ", fabAPIResp)
 		if err != nil {
 			log.Println("fab sms api response", fabAPIResp)
@@ -380,8 +396,10 @@ func Handler(ctx context.Context, sqsEvent events.SQSEvent) error {
 			updateTrackerSms(&request, &response, "FAILED FAB API(connection error)", fmt.Sprint(strings.Replace(err.Error(), "\"", "'", -1)), "")
 			return nil
 		}
-		if fabAPIResp.StatusCode != 200 {
-			updateTrackerSms(&request, &response, "FAILED (FAB API status code:- ` + fmt.Sprint(fabAPIResp.StatusCode) + `)", err.Error(), "")
+		if fabAPIResp != nil {
+			if fabAPIResp.StatusCode != 200{
+				updateTracker(&request, &response, "FAILED (FAB API status code:- ` + fmt.Sprint(fabAPIResp.StatusCode) + `)", err.Error(), "")
+			}
 			return nil
 		}
 
@@ -421,7 +439,7 @@ func updateTracker(request *Request, response *Response, status, mailError, lamb
 		}`)
 	}
 
-	resp, errParseTracker := httpClient.ParseClient("PUT", "https://dev-fab-api-gateway.thriwe.com/parse/classes/tracker/"+request.TrackerObjectID, body, &response)
+	resp, errParseTracker := httpClient.ParseClient("PUT", PARSE_AUTH_TRACKER_BASEURL+"classes/tracker/"+request.TrackerObjectID, body, &response)
 	if errParseTracker != nil {
 		log.Println("Parse - PUT - requestId--> ", request.RequestID, "Parse - PUT - response--> ", resp, "Parse - PUT - error--> ", errParseTracker)
 	}
@@ -448,7 +466,7 @@ func updateTrackerSms(request *Request, response *Response, status, smsError, la
 		}`)
 	}
 
-	resp, errParseTracker := httpClient.ParseClient("PUT", "https://dev-fab-api-gateway.thriwe.com/parse/classes/tracker/"+request.TrackerObjectID, body, &response)
+	resp, errParseTracker := httpClient.ParseClient("PUT", PARSE_AUTH_TRACKER_BASEURL+"classes/tracker/"+request.TrackerObjectID, body, &response)
 	if errParseTracker != nil {
 		log.Println("Parse - PUT - requestId--> ", request.RequestID, "Parse - PUT - response--> ", resp, "Parse - PUT - error--> ", errParseTracker)
 	}

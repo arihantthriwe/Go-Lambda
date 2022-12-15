@@ -35,8 +35,8 @@ func ParseClient(method, url string, payload *strings.Reader, v interface{}) (*h
 	if err != nil {
 		return nil, err
 	}
-	req.Header.Add("X-Parse-Master-Key", "DEV_MASTER_KEY")
-	req.Header.Add("X-Parse-Application-Id", "DEV_APPLICATION_ID")
+	req.Header.Add("X-Parse-Master-Key", "PROD_MASTER_KEY")
+	req.Header.Add("X-Parse-Application-Id", "PROD_APPLICATION_ID")
 	req.Header.Add("Content-Type", "application/json")
 	req.Header.Add("X-Auth-Server", "1")
 
@@ -77,17 +77,20 @@ func NormalClient(method, url string, payload *strings.Reader, v interface{}, ro
 		return nil, err
 	}
 	caCertPool := x509.NewCertPool()
-	caCertPool.AppendCertsFromPEM(caCert)
+	ok := caCertPool.AppendCertsFromPEM(caCert)
+	log.Println("AppendCertsFromPEM ->", ok)
 	rootCert, err := CustomLoadX509KeyPair(rootCertFile.Name(), certKey.Name())
 	if err != nil {
 		log.Println("rootCert LoadX509KeyPair error--> ", err)
 		return nil, err
 	}
-	fmt.Println(rootCert)
 	tlsConfig := &tls.Config{
-		Certificates:       []tls.Certificate{rootCert},
-		RootCAs:            caCertPool,
-		InsecureSkipVerify: true,
+		Certificates:             []tls.Certificate{rootCert},
+		RootCAs:                  caCertPool,
+		PreferServerCipherSuites: true,
+		InsecureSkipVerify:       true,
+		MinVersion:               tls.VersionTLS10,
+		MaxVersion:               tls.VersionTLS13,
 	}
 	tlsConfig.BuildNameToCertificate()
 
@@ -114,6 +117,10 @@ func NormalClient(method, url string, payload *strings.Reader, v interface{}, ro
 		return nil, err
 	}
 	log.Println("Fab client request--> ", req)
+	if req.TLS != nil {
+		log.Println("Fab client request Certificates--> ", req.TLS.PeerCertificates)
+	}
+
 	req.Header.Add("Content-Type", "application/json")
 	// resp, err := http_client.Post(url, "application/json", payload)
 	resp, err := http_client.Do(req)
@@ -134,7 +141,7 @@ func NormalClient(method, url string, payload *strings.Reader, v interface{}, ro
 			errR := errors.New(fmt.Sprint(a))
 			return nil, errR
 		}
-		if resp.StatusCode / 100 == 4{
+		if resp.StatusCode/100 == 4 {
 			b, _ := io.ReadAll(resp.Body)
 			if len(b) > 0 {
 				log.Println(resp.StatusCode, " response body ---> ", string(b))

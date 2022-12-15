@@ -48,6 +48,7 @@ func TestNormalClient(t *testing.T) {
 		rootCertFile    *os.File
 		caChainCertFile *os.File
 		certKey         *os.File
+		interCertFile *os.File
 	}
 	tests := []struct {
 		name    string
